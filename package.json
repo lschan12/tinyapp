@@ -16,5 +16,9 @@
   "bugs": {
     "url": "https://github.com/lschan12/tinyapp/issues"
   },
-  "homepage": "https://github.com/lschan12/tinyapp#readme"
+  "homepage": "https://github.com/lschan12/tinyapp#readme",
+  "dependencies": {
+    "express": "^4.18.1",
+    "morgan": "^1.10.0"
+  }
 }
