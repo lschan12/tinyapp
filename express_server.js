@@ -3,6 +3,7 @@ const morgan = require("morgan");
 const app = express();
 const PORT = 8080;
 const cookieParser = require("cookie-parser");
+const e = require("express");
 
 app.set("view engine", "ejs");
 
@@ -15,6 +16,17 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const users = {
+};
+
+const findUser = (newEmail) => {
+  for (let userId in users) {
+    if (users[userId].email === newEmail) {
+      return users[userId];
+    }
+  }
+  return null;
+};
 
 const generateRandomString = () => {
   let result = "";
@@ -25,12 +37,15 @@ const generateRandomString = () => {
   return result;
 };
 
+// Get Requests
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase, username: req.cookies["username"]};
+  const templateVars = { urls: urlDatabase, user: users[req.cookies.user_id],};
+  console.log(users);
   res.render("urls_index", templateVars);
 });
 
@@ -39,23 +54,41 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  const templateVars = { username: req.cookies["username"]};
+  const templateVars = { user: users[req.cookies.user_id]};
   res.render("urls_new", templateVars);
 });
 
-app.post("/urls", (req, res) => {
-  let id = generateRandomString();
-  urlDatabase[id] = req.body.longURL;
-  res.redirect(`/urls/${id}`); // Respond with 'Ok' (we will replace this)
-});
 
 app.get("/urls/:id", (req, res) => {
   const templateVars = {
     id: req.params.id,
     longURL: urlDatabase[req.params.id],
-    username: req.cookies["username"],
+    user: users[req.cookies.user_id],
   };
   res.render("urls_show", templateVars);
+});
+
+app.get("/u/:id", (req, res) => {
+  const longURL = urlDatabase[req.params.id];
+  res.redirect(longURL);
+});
+
+app.get("/register", (req, res) => {
+  const templateVars = { user: users[req.cookies.user_id]};
+  res.render("registration", templateVars);
+});
+
+app.get("/login", (req, res) => {
+  const templateVars = { user: users[req.cookies.user_id]};
+  res.render("login", templateVars);
+});
+
+/// Post Requests
+
+app.post("/urls", (req, res) => {
+  let id = generateRandomString();
+  urlDatabase[id] = req.body.longURL;
+  res.redirect(`/urls/${id}`); // Respond with 'Ok' (we will replace this)
 });
 
 app.post("/urls/:id", (req, res) => {
@@ -64,14 +97,6 @@ app.post("/urls/:id", (req, res) => {
   res.redirect(`/urls`);
 });
 
-app.get("/u/:id", (req, res) => {
-  const longURL = urlDatabase[req.params.id];
-  res.redirect(longURL);
-});
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
 
 app.post("/urls/:id/delete", (req, res) => {
   let id = req.params.id;
@@ -80,14 +105,49 @@ app.post("/urls/:id/delete", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  res.cookie("username", req.body.username);
-  res.redirect("/urls");
+  const email = req.body.email;
+  const password = req.body.password;
+  let userObj = findUser(email);
+  if (!userObj) {
+    res.status(403);
+    res.send("Email not found");
+  } else if (userObj.password !== password) {
+    res.status(403);
+    res.send("Incorrect Password");
+  } else {
+    let userId = userObj.id;
+    res.cookie("user_id", userId);
+    res.redirect("/urls");
+  }
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect("/urls");
 });
+
+app.post("/register", (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+  if (email === "" || password === "") {
+    res.status(400);
+    res.send("Not a valid email or password");
+  } else if (findUser(email) !== null) {
+    res.status(400);
+    res.send(`Email already taken`);
+  } else {
+    let randomId = generateRandomString();
+    users[randomId] = {
+      id: randomId,
+      email,
+      password,
+    };
+    console.log(users);
+    res.cookie("user_id", users[randomId].id);
+    res.redirect("/urls");
+  }
+});
+
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
