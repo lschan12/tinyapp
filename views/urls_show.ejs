@@ -21,7 +21,7 @@
           Short URL ID: <a href="/u/<%= id %>"><%= id %></a>
         </p>
         <form method="POST", action="/urls/<%= id %>">
-          New URL: <input name="newLongURL">
+          New URL: <input value="http://" name="newLongURL">
           <button>Change</button>
         </form>
       </div>
