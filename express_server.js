@@ -98,6 +98,7 @@ app.get("/login", (req, res) => {
 
 app.get("*", (req,res) => {
   const templateVars = { user: users[req.session.user_id], errorMessage: "Page Not Found"};
+  res.status(404);
   res.render("error", templateVars);
 });
 
@@ -105,13 +106,13 @@ app.get("*", (req,res) => {
 
 app.post("/urls", (req, res) => {
   if (!req.session.user_id) {
+    // This redirects to /urls because url_index has a condition that will tell the user to log in to see URLs
     res.redirect("/urls");
   } else {
     let newID = generateRandomString();
     urlDatabase[newID] = {};
     urlDatabase[newID]["longURL"] = req.body.longURL;
     urlDatabase[newID]["userId"] = req.session.user_id;
-    console.log(urlDatabase);
     res.redirect(`/urls/${newID}`);
   }
 });
@@ -161,8 +162,6 @@ app.post("/login", (req, res) => {
   } else {
     let userId = userObj.id;
     req.session.user_id = userId;
-    console.log(users);
-    console.log(req.session.user_id);
     res.redirect("/urls");
   }
 });
@@ -191,7 +190,6 @@ app.post("/register", (req, res) => {
       email,
       password: hashedPassword,
     };
-    console.log(users);
     req.session.user_id = users[randomId].id;
     res.redirect("/urls");
   }
