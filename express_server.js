@@ -4,8 +4,8 @@ const morgan = require("morgan");
 const app = express();
 const PORT = 8080;
 const bcrypt = require("bcryptjs");
-const getUserByEmail = require("./helpers");
-
+// Importing Helper Function from helpers.js file
+const { getUserByEmail, generateRandomString, urlsForUser } = require("./helpers");
 
 // Middleware
 app.set("view engine", "ejs");
@@ -19,34 +19,9 @@ app.use(cookieSession({
 
 // Empty Objects to be filled with users registration and URL generation
 
-const urlDatabase = {
-};
+const urlDatabase = {};
 
-const users = {
-};
-
-// Helper Functions
-
-// Generates a random string to be used as our user IDs
-const generateRandomString = () => {
-  let result = "";
-  let characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890";
-  for (let i = 0; i < 6; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return result;
-};
-
-// Returns a URL database that includes ONLY the URLs associated with the logged in user
-const urlsForUser = (userId) => {
-  let output = {};
-  for (let url of Object.keys(urlDatabase)) {
-    if (urlDatabase[url].userId === userId) {
-      output[url] = urlDatabase[url];
-    }
-  }
-  return output;
-};
+const users = {};
 
 // Get Requests
 
@@ -55,15 +30,11 @@ app.get("/", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  if (!req.session.user_id) {
-    res.send("Please log in to view your URLS");
-  } else {
-    const templateVars = {
-      urls: urlsForUser(req.session.user_id),
-      user: users[req.session.user_id],
-    };
-    res.render("urls_index", templateVars);
-  }
+  const templateVars = {
+    urls: urlsForUser(req.session.user_id, urlDatabase),
+    user: users[req.session.user_id],
+  };
+  res.render("urls_index", templateVars);
 });
 
 app.get("/urls.json", (req, res) => {
@@ -80,11 +51,13 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  const userUrls = urlsForUser(req.session.user_id);
+  const userUrls = urlsForUser(req.session.user_id, urlDatabase);
   if (!req.session.user_id) {
     res.redirect("/login");
   } else if (urlDatabase[req.params.id].userId !== req.session.user_id) {
-    res.send("You do not own this URL");
+    const templateVars = {user: users[req.session.user_id], errorMessage: "You do not own this URL"};
+    res.status(401);
+    res.render("error", templateVars);
   } else {
     const templateVars = {
       id: req.params.id,
@@ -97,7 +70,8 @@ app.get("/urls/:id", (req, res) => {
 
 app.get("/u/:id", (req, res) => {
   if (!urlDatabase[req.params.id]) {
-    res.send("URL Not in Database");
+    const templateVars = {user: users[req.session.user_id], errorMessage: "URL Not in Database",};
+    res.render("error", templateVars);
   } else {
     const longURL = urlDatabase[req.params.id].longURL;
     res.redirect(longURL);
@@ -122,11 +96,16 @@ app.get("/login", (req, res) => {
   }
 });
 
+app.get("*", (req,res) => {
+  const templateVars = { user: users[req.session.user_id], errorMessage: "Page Not Found"};
+  res.render("error", templateVars);
+});
+
 /// Post Requests
 
 app.post("/urls", (req, res) => {
   if (!req.session.user_id) {
-    res.send("Not logged in.\nPlease log in to shorten URLs.");
+    res.redirect("/urls");
   } else {
     let newID = generateRandomString();
     urlDatabase[newID] = {};
@@ -172,11 +151,13 @@ app.post("/login", (req, res) => {
   const password = req.body.password;
   let userObj = getUserByEmail(email, users);
   if (!userObj) {
+    const templateVars = { user: users[req.session.user_id], errorMessage: "Email Not Found"};
     res.status(403);
-    res.send("Email not found");
+    res.render("error", templateVars);
   } else if (!bcrypt.compareSync(password, userObj.password)) {
+    const templateVars = { user: users[req.session.user_id], errorMessage: "Incorrect Password"};
     res.status(403);
-    res.send("Incorrect Password");
+    res.render("error", templateVars);
   } else {
     let userId = userObj.id;
     req.session.user_id = userId;
@@ -196,11 +177,13 @@ app.post("/register", (req, res) => {
   const password = req.body.password;
   const hashedPassword = bcrypt.hashSync(password, 10);
   if (email === "" || password === "") {
+    const templateVars = { user: users[req.session.user_id], errorMessage: "Email or Password not valid"};
     res.status(400);
-    res.send("Not a valid email or password");
+    res.render("error", templateVars);
   } else if (getUserByEmail(email, users) !== null) {
+    const templateVars = { user: users[req.session.user_id], errorMessage: "Email already in use"};
     res.status(400);
-    res.send(`Email already taken`);
+    res.render(`error`, templateVars);
   } else {
     let randomId = generateRandomString();
     users[randomId] = {

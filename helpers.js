@@ -7,4 +7,24 @@ const getUserByEmail = (newEmail, database) => {
   return null;
 };
 
-module.exports = getUserByEmail;
+const generateRandomString = () => {
+  let result = "";
+  let characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890";
+  for (let i = 0; i < 6; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return result;
+};
+
+const urlsForUser = (userId, database) => {
+  let output = {};
+  for (let url of Object.keys(database)) {
+    if (database[url].userId === userId) {
+      output[url] = database[url];
+    }
+  }
+  return output;
+};
+
+
+module.exports = { getUserByEmail, generateRandomString, urlsForUser };
