@@ -51,7 +51,7 @@ const urlsForUser = (userId) => {
 // Get Requests
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  res.redirect("/login");
 });
 
 app.get("/urls", (req, res) => {
