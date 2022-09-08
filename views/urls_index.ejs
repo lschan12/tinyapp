@@ -16,7 +16,7 @@
   <%- include('partials/_header') %>
   <main style="margin: 1em;">
     <% if (!user) { %>
-      <h3>Please login to see your URLs</h3>
+      <h3>Please login or register to see your URLs</h3>
     <% } else { %>
     <h3>My URLs</h3>
     <table class="table">
@@ -40,7 +40,7 @@
             </td>
             <td>
               <form method="POST" action="/urls/<%= id %>?_method=DELETE">
-              <button class ="btn-primary" type="submit">Delete</button>
+              <button class ="btn-danger" type="submit">Delete</button>
             </form>
             </td>
           </tr>

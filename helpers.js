@@ -26,7 +26,6 @@ const urlsForUser = (userId, database) => {
   return output;
 };
 
-
 const includesUniqueView = (uniqueId, uniqueViews) => {
   for (let view of uniqueViews) {
     if (view["uniqueId"] === uniqueId) {

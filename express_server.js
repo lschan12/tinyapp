@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 const cookieSession = require("cookie-session");
 const express = require("express");
 const morgan = require("morgan");
@@ -20,7 +21,7 @@ app.use(cookieSession({
 }));
 app.use(methodOverride("_method"));
 
-// Empty Objects to be filled with users registration and URL generation
+// Empty Objects to be filled with user registration and URL generation
 
 const urlDatabase = {};
 
@@ -98,10 +99,9 @@ app.get("/u/:id", (req, res) => {
       }
     }
     if (!includesUniqueView(uniqueId, urlDatabase[id]["uniqueViews"])) {
-      urlDatabase[id]["uniqueViews"].push({uniqueId, readableDate});
+      urlDatabase[id]["uniqueViews"].push({uniqueId, readableDate}); // Adding a visit log to unique views array if the array does not include the current user
     }
-    urlDatabase[id]["views"].push({uniqueId, readableDate});
-    console.log(urlDatabase[id]["views"]);
+    urlDatabase[id]["views"].push({uniqueId, readableDate}); // Adding a visit log regardless if they are unique or not
     res.redirect(urlDatabase[id].longURL);
   }
 });
