@@ -59,7 +59,8 @@ app.get("/urls/:id", (req, res) => {
   const userId = req.session.user_id;
   const userUrls = urlsForUser(userId, urlDatabase);
   if (!userId) {
-    res.redirect("/login");
+    const templateVars = {user: users[userId], errorMessage: "Please log in to edit this URL"};
+    res.render("error", templateVars);
   } else if (urlDatabase[id].userId !== userId) {
     const templateVars = {user: users[userId], errorMessage: "You do not own this URL"};
     res.status(401);
