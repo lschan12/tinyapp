@@ -4,8 +4,10 @@ const morgan = require("morgan");
 const app = express();
 const PORT = 8080;
 const bcrypt = require("bcryptjs");
+const methodOverride = require("method-override");
 // Importing Helper Function from helpers.js file
-const { getUserByEmail, generateRandomString, urlsForUser } = require("./helpers");
+const { getUserByEmail, generateRandomString, urlsForUser, includesUniqueView } = require("./helpers");
+
 
 // Middleware
 app.set("view engine", "ejs");
@@ -16,6 +18,7 @@ app.use(cookieSession({
   name: "session",
   keys: ["key0"],
 }));
+app.use(methodOverride("_method"));
 
 // Empty Objects to be filled with users registration and URL generation
 
@@ -51,30 +54,55 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  const userUrls = urlsForUser(req.session.user_id, urlDatabase);
-  if (!req.session.user_id) {
+  const id = req.params.id;
+  const userId = req.session.user_id;
+  const userUrls = urlsForUser(userId, urlDatabase);
+  if (!userId) {
     res.redirect("/login");
-  } else if (urlDatabase[req.params.id].userId !== req.session.user_id) {
-    const templateVars = {user: users[req.session.user_id], errorMessage: "You do not own this URL"};
+  } else if (urlDatabase[id].userId !== userId) {
+    const templateVars = {user: users[userId], errorMessage: "You do not own this URL"};
     res.status(401);
     res.render("error", templateVars);
   } else {
     const templateVars = {
-      id: req.params.id,
-      longURL: userUrls[req.params.id].longURL,
-      user: users[req.session.user_id],
+      id: id,
+      longURL: userUrls[id].longURL,
+      user: users[userId],
+      views: urlDatabase[id]["views"].length,
+      uniqueViews: urlDatabase[id]["uniqueViews"].length,
+      viewsArr: urlDatabase[id]["views"],
     };
     res.render("urls_show", templateVars);
   }
 });
 
 app.get("/u/:id", (req, res) => {
+  const id = req.params.id;
+  const userId = req.session.user_id;
+  let date = new Date();
+  let readableDate = date.toUTCString();
   if (!urlDatabase[req.params.id]) {
-    const templateVars = {user: users[req.session.user_id], errorMessage: "URL Not in Database",};
+    const templateVars = {user: users[userId], errorMessage: "URL Not in Database",};
     res.render("error", templateVars);
   } else {
-    const longURL = urlDatabase[req.params.id].longURL;
-    res.redirect(longURL);
+    let uniqueId; // Assigning a unique ID to every visitor depending if they're logged in or a visitor
+    if (userId) {
+      uniqueId = userId;
+    } else {
+      if (!req.session.visitor_id) {
+        let visitorID = generateRandomString();
+        req.session.visitor_id = visitorID;
+        uniqueId = visitorID;
+      } else {
+        uniqueId = req.session.visitor_id;
+      }
+    }
+    if (!includesUniqueView(uniqueId, urlDatabase[id]["uniqueViews"])) {
+      urlDatabase[id]["uniqueViews"].push({uniqueId, readableDate});
+    }
+    urlDatabase[id]["views"].push({uniqueId, readableDate});
+    console.log(urlDatabase[id]["views"]);
+    res.redirect(urlDatabase[id].longURL);
   }
 });
 
@@ -113,11 +141,13 @@ app.post("/urls", (req, res) => {
     urlDatabase[newID] = {};
     urlDatabase[newID]["longURL"] = req.body.longURL;
     urlDatabase[newID]["userId"] = req.session.user_id;
+    urlDatabase[newID]["views"] = [],
+    urlDatabase[newID]["uniqueViews"] = [],
     res.redirect(`/urls/${newID}`);
   }
 });
 
-app.post("/urls/:id", (req, res) => {
+app.put("/urls/:id", (req, res) => {
   let id = req.params.id;
   if (!req.session.user_id) {
     res.send("Not logged in.\nPlease log in to shorten URLs.");
@@ -132,7 +162,7 @@ app.post("/urls/:id", (req, res) => {
 });
 
 
-app.post("/urls/:id/delete", (req, res) => {
+app.delete("/urls/:id", (req, res) => {
   let id = req.params.id;
   if (!req.session.user_id) {
     res.send("Not logged in.\nPlease log in to delete URLs.");
@@ -167,7 +197,7 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  req.session = null;
+  req.session.user_id = null;
   res.redirect("/urls");
 });
 

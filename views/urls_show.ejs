@@ -20,10 +20,23 @@
         <p class="card-text">
           Short URL ID: <a href="/u/<%= id %>"><%= id %></a>
         </p>
-        <form method="POST", action="/urls/<%= id %>">
+        <form method="POST", action="/urls/<%= id %>?_method=PUT">
           New URL: <input value="http://" name="newLongURL">
           <button>Change</button>
         </form>
+        <br>
+        <% if (views) { %>
+          <h6>Total Number of Visits: <%= views %></h6>
+          <h6>Total Number of unique visits: <%= uniqueViews %></h6>
+          <br>
+          <h5>Visit Log</h5>
+          <br>
+          <% for (let view of viewsArr) { %>
+            <h6>Visitor ID: <%= view.uniqueId %></h6>
+            <h6> Date: <%= view.readableDate %></h6>
+            <Br>
+          <% } %>
+         <% } %>
       </div>
       <div class="card-footer text-muted"></div>
     </div>

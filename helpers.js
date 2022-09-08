@@ -27,4 +27,13 @@ const urlsForUser = (userId, database) => {
 };
 
 
-module.exports = { getUserByEmail, generateRandomString, urlsForUser };
+const includesUniqueView = (uniqueId, uniqueViews) => {
+  for (let view of uniqueViews) {
+    if (view["uniqueId"] === uniqueId) {
+      return true;
+    }
+  }
+  return false;
+};
+
+module.exports = { getUserByEmail, generateRandomString, urlsForUser, includesUniqueView };
