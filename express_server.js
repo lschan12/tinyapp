@@ -6,8 +6,10 @@ const app = express();
 const PORT = 8080;
 const bcrypt = require("bcryptjs");
 const methodOverride = require("method-override");
-// Importing Helper Function from helpers.js file
+
+// Importing Helper Function from helpers.js file, and empty database objects from database.js
 const { getUserByEmail, generateRandomString, urlsForUser, includesUniqueView } = require("./helpers");
+const { urlDatabase, users } = require("./database");
 
 
 // Middleware
@@ -20,12 +22,6 @@ app.use(cookieSession({
   keys: ["key0"],
 }));
 app.use(methodOverride("_method"));
-
-// Empty Objects to be filled with user registration and URL generation
-
-const urlDatabase = {};
-
-const users = {};
 
 // Get Requests
 
