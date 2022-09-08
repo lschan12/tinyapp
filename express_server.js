@@ -11,8 +11,8 @@ const { getUserByEmail, generateRandomString, urlsForUser, includesUniqueView } 
 
 
 // Middleware
-app.set("view engine", "ejs");
 
+app.set("view engine", "ejs");
 app.use(express.urlencoded({extended: true}));
 app.use(morgan("dev"));
 app.use(cookieSession({
@@ -160,7 +160,6 @@ app.put("/urls/:id", (req, res) => {
     res.redirect(`/urls`);
   }
 });
-
 
 app.delete("/urls/:id", (req, res) => {
   let id = req.params.id;
